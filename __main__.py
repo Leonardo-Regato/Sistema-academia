@@ -1,4 +1,5 @@
-from classes import *
+from services.academia import Academia
+from models.pessoa import Pessoa
 from rich import print
 from rich.panel import Panel
 from time import sleep
@@ -224,3 +225,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
