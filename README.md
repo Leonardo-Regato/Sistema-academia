@@ -2,34 +2,36 @@
 
 ## Sobre o projeto
 
-O Sistema de Academia é um projeto desenvolvido com o objetivo de organizar e administrar informações básicas de uma academia.
+O Sistema de Academia é um projeto desenvolvido em Python com o objetivo de simular o gerenciamento de uma academia, permitindo o controle de alunos e professores.
 
-Atualmente, o sistema permite o gerenciamento de alunos e professores por meio de um menu interativo no terminal. O projeto está sendo desenvolvido de forma incremental, começando pelos fundamentos de Programação Orientada a Objetos em Python e evoluindo gradualmente para uma aplicação mais completa.
+O projeto começou como uma aplicação executada diretamente no terminal, com foco nos fundamentos de Programação Orientada a Objetos, e vem evoluindo gradualmente para uma estrutura mais próxima de uma aplicação real.
+
+Atualmente, o sistema conta com persistência de dados utilizando PostgreSQL e autenticação de usuários, além das funcionalidades de gerenciamento de alunos e professores.
 
 ## Funcionalidades
 
 Atualmente, o sistema permite:
 
-* Cadastro de alunos;
-* Cadastro de professores;
-* Geração automática de IDs sequenciais;
-* Busca de alunos e professores por nome;
-* Alteração de nome e data de nascimento;
-* Remoção de alunos e professores;
-* Listagem de alunos e professores cadastrados;
+Atualmente, o sistema permite:
+
+* Cadastro, busca, alteração e remoção de alunos e professores;
+* Persistência dos dados utilizando PostgreSQL;
+* Geração automática de IDs pelo banco de dados;
+* Autenticação de usuários por login e senha;
+* Armazenamento seguro das senhas utilizando bcrypt;
+* Validação de nomes, datas de nascimento e IDs;
 * Cálculo automático da idade a partir da data de nascimento;
-* Validação de nomes e datas de nascimento;
-* Validação de IDs;
-* Tratamento de erros de entrada;
+* Tratamento de erros de entrada e exceções;
 * Confirmação antes da remoção de registros;
-* Interface de terminal utilizando a biblioteca Rich.
+* Interface interativa no terminal utilizando a biblioteca Rich.
 
 ## Tecnologias utilizadas
 
 * Python;
+* PostgreSQL
+* bcrypt
 * Rich;
 * Biblioteca datetime;
-* Biblioteca re.
 
 ## Conceitos aplicados
 
@@ -39,20 +41,15 @@ Atualmente, o sistema permite:
 * Encapsulamento;
 * @property e setters;
 * Métodos estáticos;
-* Funções e métodos;
-* Estruturas condicionais;
-* Estruturas de repetição;
+* Validação e normalização de dados;
+* Integração entre Python e PostgreSQL;
+* Operações CRUD;
 * Tratamento de exceções com try/except;
-* ValueError;
+* Autenticação e armazenamento seguro de senhas
 * Validação de dados;
 * Passagem de funções como argumentos.
+* Versionamento com Git e GitHub.
 
-## Próximos passos
+## Objetivo
 
-* Implementar persistência de dados utilizando banco de dados;
-* Separar melhor as responsabilidades da aplicação;
-* Criar um sistema de gerenciamento de mensalidades;
-* Expandir o controle de alunos e professores;
-* Desenvolver uma API utilizando FastAPI;
-* Melhorar a organização e estrutura do projeto;
-* Adicionar novas funcionalidades conforme a evolução do projeto.
+Mais do que desenvolver um sistema completo, o objetivo deste projeto é aprender na prática como uma aplicação Python evolui, aplicando novos conceitos conforme eles são estudados e transformando gradualmente uma aplicação simples em uma estrutura mais próxima de um sistema real.
