@@ -21,10 +21,10 @@ class Pessoa:
         padrao = r"^[A-Za-zÀ-ÿ\s]+$"
         nome = nome.strip()
         if nome == "":
-            raise ValueError("O nome está vazio")
+            raise ValueError("O nome é obrigatório.")
         
         if not re.match(padrao, nome):
-            raise ValueError("O nome contém carácteres inválidos")
+            raise ValueError("O nome contém caracteres inválidos.")
 
         
 
@@ -36,14 +36,27 @@ class Pessoa:
 
     @data_nascimento.setter
     def data_nascimento(self,nova_data):
-        try:
-            data_provisoria = datetime.strptime(nova_data, "%d/%m/%Y")
-        except ValueError:
-            raise ValueError("Data inválida")
+        data_valida = self.validar_data(nova_data)
+        self._data_nascimento = data_valida
 
-        if data_provisoria.date() > date.today(): 
-            raise ValueError("A data de nascimento está maior que a data atual.")
-        self._data_nascimento = data_provisoria
+    @staticmethod
+    def validar_data(nova_data):
+        try:
+            if isinstance(nova_data, date):
+                data_provisoria = nova_data
+            else:
+                data_provisoria = datetime.strptime(nova_data, "%d/%m/%Y").date()
+        except ValueError:
+            raise ValueError("Informe a data no formato DD/MM/AAAA.")
+
+        if data_provisoria > date.today(): 
+            raise ValueError("A data de nascimento não pode ser posterior à data atual.")
+
+        if data_provisoria.year <  date.today().year - 100: 
+            raise ValueError("Data de nascimento fora do período permitido.")
+        return data_provisoria
+
+        
     
             
 

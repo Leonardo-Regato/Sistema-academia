@@ -1,73 +1,132 @@
 from models.aluno import Aluno
 from models.professor import Professor
 from rich import print
+from database.conexao import conectar
 
 
 class Academia:
-    def __init__(self):
-        self.lista_alunos = []
-        self.lista_professores =[]
-        self.proximo_aluno_id = 1
-        self.proximo_professor_id = 1
-        
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - |
+#              FUNÇÕES RELACIONADAS A CRIAÇÃO E MANIPULAÇÃO DOS ALUNOS                  |
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - |
+
     def cadastra_aluno(self, nome, data_nascimento):
-        id_aluno = self.proximo_aluno_id
+        conexao = conectar()
+        cursor = conexao.cursor()
+        cursor.execute(
+            "INSERT INTO alunos (nome, data_nascimento) VALUES (%s, %s) RETURNING id",
+            (nome, data_nascimento)
+        )
+        id_aluno = cursor.fetchone()[0]
+        conexao.commit()
         aluno = Aluno(nome, data_nascimento, id_aluno)
-        self.add_aluno(aluno)
-        self.proximo_aluno_id += 1
+        conexao.close()
         return aluno
 
-
-    def add_aluno(self,aluno):
-        self.lista_alunos.append(aluno)
-
-
-    def mostrar_alunos(self): 
+    def mostrar_alunos(self):
+        conexao = conectar()
+        cursor = conexao.cursor()
+        cursor.execute(
+            "SELECT * FROM alunos"
+        )
+        alunos = cursor.fetchall()
+        conexao.close()
         print("==== ALUNOS ====")  
-        for aluno in self.lista_alunos:
-            print(f"[yellow]ID {aluno.id}[/] | {aluno.nome} | {aluno.idade} anos")
-
-
+        for aluno in alunos:
+            id_aluno, nome_aluno, data_nascimento = aluno
+            aluno = Aluno(nome_aluno, data_nascimento, id_aluno)
+            print(f"{aluno.id} | {aluno.nome} | {aluno.idade} anos.")
 
 
     def buscar_aluno(self, nome):
-        encontrou = False
+        conexao = conectar()
+        cursor = conexao.cursor()
         print('=== Busca de alunos ===')
-        for aluno in self.lista_alunos:
-            if nome.lower() in aluno.nome.lower():
-                print(f'- {aluno.nome} = {aluno.idade} anos.')
-                encontrou = True
-        if not encontrou:
-            print (f'O(A) aluno(a) {nome} não foi encontrado(a).')
+        cursor.execute(
+            "SELECT * FROM alunos WHERE nome ILIKE %s",
+            (f"%{nome}%",)
+        )
+        alunos = cursor.fetchall()
+        conexao.close()
+        if alunos:
+            for aluno in alunos:
+                id_aluno, nome_aluno, data_nascimento = aluno
+                aluno = Aluno(nome_aluno, data_nascimento, id_aluno)
+                
+                print(f"{aluno.id} | {aluno.nome} | {aluno.idade} anos.")
+        else:
+            print(f"Aluno(a) '{nome}' não encontrado(a).")
 
 
     def localizar_aluno(self, id_aluno):
-        for aluno in self.lista_alunos:
-            if id_aluno == aluno.id:
-              return aluno
-        raise ValueError("O id não existe")
+        conexao = conectar()
+        cursor = conexao.cursor()
+        cursor.execute(
+           "SELECT * FROM alunos WHERE id = %s",
+           (id_aluno,)
+       )
+        aluno = cursor.fetchone()
+        if aluno:
+            id_aluno, nome_aluno, data_nascimento = aluno
+            aluno = Aluno(nome_aluno, data_nascimento, id_aluno)
+            conexao.close()
+            return aluno
+        else:
+            conexao.close()
+            raise ValueError("O ID informado não foi encontrado.")
+        
+            
 
     def alterar_nome_aluno(self, id_aluno, novo_nome):
+        conexao = conectar()
+        cursor = conexao.cursor()
+        self.localizar_aluno(id_aluno)
+        cursor.execute(
+            "UPDATE alunos SET nome = %s WHERE id = %s",
+            (novo_nome, id_aluno,)
+        )
+        conexao.commit()
+        conexao.close()        
         aluno = self.localizar_aluno(id_aluno)
-        aluno.nome = novo_nome
+        return aluno
+    
+        
+        
+    def alterar_data_aluno(self, id_aluno, nova_data):
+        conexao = conectar()
+        cursor = conexao.cursor()
+        self.localizar_aluno(id_aluno)
+        cursor.execute(
+            "UPDATE alunos SET data_nascimento = %s WHERE id= %s",
+            (nova_data,id_aluno)
+        )
+        conexao.commit()
+        conexao.close()
+        aluno = self.localizar_aluno(id_aluno)
         return aluno
 
-    def alterar_data_aluno(self, id, nova_data):
-        aluno = self.localizar_aluno(id)
-        aluno.data_nascimento = nova_data
-        return aluno
 
-    def remover_aluno(self, id):
-        aluno = self.localizar_aluno(id)
-        self.lista_alunos.remove(aluno)
+
+
+    def remover_aluno(self, id_aluno):
+        conexao = conectar()
+        cursor = conexao.cursor()
+        self.localizar_aluno(id_aluno)
+        cursor.execute(
+            "DELETE from alunos WHERE id = %s",
+            (id_aluno,)
+        )
+        conexao.commit()
         print("Aluno(a) removido(a) com sucesso.")
+        conexao.close()
+        
 
     def validar_id(self, localizador):
         while True:
             try:
-                valor = int(input("Digite a id: "))
+                valor = int(input("Digite o ID: "))
             except ValueError:
-                print("[red]ERRO:[/] Digite apenas números")
+                print("[red]ERRO:[/] Informe um ID válido.")
                 continue
             try:
                 localizador(valor)
@@ -75,54 +134,138 @@ class Academia:
             except ValueError as e:
                 print(f"[red]ERRO:[/]  {e}")
 
+    def existem_alunos(self):
+        conexao = conectar()
+        cursor = conexao.cursor()
+
+        cursor.execute(
+            "SELECT EXISTS (SELECT 1 FROM alunos)"
+        )
+        resultado = cursor.fetchone()[0]
+        existe = bool(resultado)
+        conexao.close()      
+        return existe
+                                
+            
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - -|
+#              FUNÇÕES RELACIONADAS A CRIAÇÃO E MANIPULAÇÃO DOS PROFESSORES                  |
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - -|
         
+
     def cadastrar_professor(self, nome, data_nascimento):
-        id_prof = self.proximo_professor_id
-        professor = Professor(nome, data_nascimento, id_prof)
-        self.add_professor(professor)
-        self.proximo_professor_id += 1
+        conexao = conectar()     
+        cursor = conexao.cursor()
+        cursor.execute(
+            "INSERT INTO professores (nome, data_nascimento) VALUES (%s, %s) RETURNING id",
+            (nome,data_nascimento)
+        )       
+        id_professor = cursor.fetchone()[0]
+        conexao.commit()
+        professor = Professor(nome, data_nascimento, id_professor)
+        conexao.close()
         return professor
         
 
-    def add_professor(self, professor):
-        self.lista_professores.append(professor)
-
-
     def mostrar_professores(self):
-        print("==== PROFESSORES ====")
-        for professor in self.lista_professores:
-            print(f"[yellow]ID {professor.id}[/] | {professor.nome} | {professor.idade} anos")
+        conexao = conectar()
+        cursor = conexao.cursor()
+        cursor.execute(
+            "SELECT * FROM professores"
+        )
+        professores = cursor.fetchall()
+        conexao.close()
+        print("==== PROFESSORES ====") 
+        for professor in professores:
+            id_professor, nome_professor, data_nascimento = professor 
+            professor = Professor(nome_professor, data_nascimento, id_professor)
+            print(f"{professor.id} | {professor.nome} | {professor.idade} anos.") 
 
 
     def buscar_professor(self, nome):
-            encontrou = False
-            print("=== Busca de professor ===")
-            for professor in self.lista_professores:
-                if nome.lower() in professor.nome.lower():
-                    print(f'- {professor.nome} = {professor.idade} anos.')
-                    encontrou = True
-            if not encontrou:
-                print(f"O(A) professor(a) {nome} não foi encontrado(a).")  
+        conexao = conectar()
+        cursor = conexao.cursor()
+        cursor.execute(
+            "SELECT * FROM professores WHERE nome ILIKE %s",
+            (f"%{nome}%",)
+        )
+        professores = cursor.fetchall()
+        conexao.close()
+        if professores:
+             for professor in professores:
+                    id_professor, nome_professor, data_nascimento = professor 
+                    professor = Professor(nome_professor, data_nascimento, id_professor)
+                    print(f"{professor.id} | {professor.nome} | {professor.idade} anos.") 
+
+        if not professores:
+            print(f"Professor(a) '{nome}' não encontrado(a).")  
 
     
     def localizar_professor(self, id_prof):
-        for professor in self.lista_professores:
-            if id_prof == professor.id:
-                return professor
-        raise ValueError("O id não existe")
+        conexao = conectar()
+        cursor = conexao.cursor()
+        cursor.execute(
+            "SELECT * FROM professores WHERE id = %s",
+            (id_prof,)
+        )
+        professor = cursor.fetchone()
+        if professor:
+            id_professor, nome_professor, data_nascimento = professor 
+            professor = Professor(nome_professor, data_nascimento, id_professor)
+            conexao.close()
+            return professor
+        else:
+            conexao.close()
+            raise ValueError("O ID informado não foi encontrado.")
+
+
 
     def alterar_nome_professor(self, id_prof, novo_nome):
+        conexao = conectar()
+        cursor = conexao.cursor()
+        self.localizar_professor(id_prof)
+        cursor.execute(
+            "UPDATE professores SET nome = %s WHERE id = %s",
+            (novo_nome, id_prof)
+        )
+        conexao.commit()
+        conexao.close()
         professor = self.localizar_professor(id_prof)
-        professor.nome = novo_nome
         return professor
 
 
-    def alterar_data_professor(self, id, nova_data):
-        professor = self.localizar_professor(id)
-        professor.data_nascimento = nova_data
+    def alterar_data_professor(self, id_prof, nova_data):
+        conexao = conectar()
+        cursor = conexao.cursor()
+        self.localizar_professor(id_prof)
+        cursor.execute(
+            "UPDATE professores SET data_nascimento = %s WHERE id = %s",
+            (nova_data, id_prof)
+        )
+        conexao.commit()
+        conexao.close()
+        professor = self.localizar_professor(id_prof)
         return professor
 
-    def remover_professor(self, id):
-        professor = self.localizar_professor(id)
-        self.lista_professores.remove(professor)
+    def remover_professor(self, id_prof):
+        conexao = conectar()
+        cursor = conexao.cursor()
+        self.localizar_professor(id_prof)
+        cursor.execute(
+            "DELETE FROM professores WHERE id = %s",
+            (id_prof,)
+        )
+        conexao.commit()
         print("Professor(a) removido(a) com sucesso.")
+        conexao.close()
+
+    def existem_professores(self):
+        conexao = conectar()
+        cursor = conexao.cursor()
+
+        cursor.execute(
+            "SELECT EXISTS (SELECT 1 FROM professores)"
+        )
+        resultado = cursor.fetchone()[0]
+        existe = bool(resultado)
+        conexao.close()      
+        return existe
